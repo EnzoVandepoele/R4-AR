@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualiseur 4L</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%9A%90%3C/text%3E%3C/svg%3E">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f2ee;
+    --surface: #ffffff;
+    --text: #1c1b19;
+    --muted: #6b6963;
+    --border: #dedad2;
+    --accent: #c8502d;
+    --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171614;
+      --surface: #201f1c;
+      --text: #f0ede7;
+      --muted: #9b978e;
+      --border: #333029;
+      --accent: #e8734c;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171614;
+    --surface: #201f1c;
+    --text: #f0ede7;
+    --muted: #9b978e;
+    --border: #333029;
+    --accent: #e8734c;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 18px 16px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 18px; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .spacer { flex: 1 1 auto; }
+
+  main {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 260px;
+    gap: 16px;
+  }
+  @media (max-width: 820px) {
+    main { grid-template-columns: minmax(0,1fr); }
+    .stage { min-height: 55vh; }
+  }
+
+  .stage {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    min-height: 0;
+  }
+  model-viewer {
+    width: 100%;
+    height: 100%;
+    min-height: 320px;
+    --poster-color: transparent;
+    --progress-bar-color: var(--accent);
+    background: transparent;
+  }
+
+  .hint {
+    position: absolute;
+    left: 12px; bottom: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 11px;
+    pointer-events: none;
+    opacity: .9;
+  }
+
+  aside {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+  }
+  .card h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  button, .btn {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 7px 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s, border-color .15s;
+  }
+  button:hover, .btn:hover { border-color: var(--accent); }
+  button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  label.field { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  .thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .thumbs a { display: block; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); line-height: 0; }
+  .thumbs img { width: 100%; height: 76px; object-fit: cover; }
+
+  dl { margin: 0; font-size: 13px; }
+  dl div { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+  dt { color: var(--muted); }
+  dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+  .note {
+    margin: 0 16px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    border-left: 2px solid var(--accent);
+    padding-left: 12px;
+  }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>4L low-poly</h1>
+  <span class="sub">4Llowpoly.glb</span>
+  <span class="spacer"></span>
+  <button id="theme" title="Basculer clair / sombre">Thème</button>
+</header>
+
+<main>
+  <div class="stage">
+    <model-viewer
+      id="mv"
+      src="4Llowpoly.glb"
+      ios-src="4Llowpoly.usdz"
+      alt="Modèle 3D low-poly d'une Renault 4L"
+      camera-controls
+      touch-action="pan-y"
+      auto-rotate
+      auto-rotate-delay="800"
+      rotation-per-second="18deg"
+      shadow-intensity="1"
+      shadow-softness="0.7"
+      exposure="1"
+      environment-image="neutral"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-orbit="35deg 72deg auto"
+      min-field-of-view="10deg"
+      max-field-of-view="55deg">
+      <button slot="ar-button" class="btn" style="position:absolute;right:12px;bottom:12px;background:var(--surface)">Voir en AR</button>
+    </model-viewer>
+    <div class="hint">Glisser pour tourner · molette pour zoomer · clic droit pour déplacer</div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h2>Affichage</h2>
+      <div class="row">
+        <button id="rotate" aria-pressed="true">Rotation auto</button>
+        <button id="plain">Fond uni</button>
+        <button id="reset">Recadrer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Éclairage</h2>
+      <label class="field" for="exp">Exposition <span id="expv">1.00</span></label>
+      <input id="exp" type="range" min="0.1" max="2.5" step="0.05" value="1">
+      <label class="field" for="sha" style="margin-top:10px">Ombre <span id="shav">1.00</span></label>
+      <input id="sha" type="range" min="0" max="3" step="0.1" value="1">
+    </div>
+
+    <div class="card">
+      <h2>Textures du dossier</h2>
+      <div class="thumbs">
+        <a href="Nouvelle4L.png" target="_blank" rel="noopener" title="Nouvelle4L.png">
+          <img src="Nouvelle4L.png" alt="Rendu Nouvelle 4L">
+        </a>
+        <a href="texture-generation.png" target="_blank" rel="noopener" title="texture-generation.png">
+          <img src="texture-generation.png" alt="Génération de la texture">
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Fichiers</h2>
+      <dl>
+        <div><dt>GLB</dt><dd>578 Ko</dd></div>
+        <div><dt>USDZ</dt><dd>399 Ko</dd></div>
+        <div><dt>Statut</dt><dd id="status">chargement…</dd></div>
+      </dl>
+      <div class="row" style="margin-top:10px">
+        <a class="btn" href="4Llowpoly.glb" download>Télécharger .glb</a>
+        <a class="btn" href="4Llowpoly.usdz" download>.usdz</a>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<p class="note" id="filenote" hidden>
+  Page ouverte en <code>file://</code> : le navigateur bloque le chargement du .glb.
+  Servez le dossier en HTTP (<code>python -m http.server</code>) ou publiez-le sur GitHub Pages.
+</p>
+
+<script>
+  const mv = document.getElementById('mv');
+
+  if (location.protocol === 'file:') {
+    document.getElementById('filenote').hidden = false;
+  }
+
+  document.getElementById('theme').onclick = () => {
+    const root = document.documentElement;
+    const dark = root.getAttribute('data-theme') === 'dark'
+      || (!root.hasAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  };
+
+  const rot = document.getElementById('rotate');
+  rot.onclick = () => {
+    const on = rot.getAttribute('aria-pressed') === 'true';
+    rot.setAttribute('aria-pressed', String(!on));
+    if (on) mv.removeAttribute('auto-rotate'); else mv.setAttribute('auto-rotate', '');
+  };
+
+  const plainBtn = document.getElementById('plain');
+  let plain = false;
+  plainBtn.onclick = () => {
+    plain = !plain;
+    plainBtn.setAttribute('aria-pressed', String(plain));
+    mv.style.background = plain ? 'var(--bg)' : 'transparent';
+  };
+
+  document.getElementById('reset').onclick = () => {
+    mv.cameraOrbit = '35deg 72deg auto';
+    mv.fieldOfView = 'auto';
+    mv.cameraTarget = 'auto auto auto';
+  };
+
+  const exp = document.getElementById('exp'), expv = document.getElementById('expv');
+  exp.oninput = () => { mv.exposure = exp.value; expv.textContent = (+exp.value).toFixed(2); };
+
+  const sha = document.getElementById('sha'), shav = document.getElementById('shav');
+  sha.oninput = () => { mv.shadowIntensity = sha.value; shav.textContent = (+sha.value).toFixed(2); };
+
+  const status = document.getElementById('status');
+  mv.addEventListener('load', () => { status.textContent = 'chargé'; });
+  mv.addEventListener('error', (e) => {
+    status.textContent = 'erreur';
+    console.error('model-viewer:', e.detail);
+  });
+</script>
+</body>
+</html>
